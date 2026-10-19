@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Surprise</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+  />
+  <style>
+    body { background-size: cover; background-position: center; }
+    .pin-gate { background: linear-gradient(145deg, rgba(47, 12, 40, .94), rgba(35, 10, 39, .97)); }
+    .pin-card { width: min(100%, 536px); min-height: 100vh; border-inline: 1px solid rgba(255,255,255,.25); background: linear-gradient(155deg, rgba(105, 48, 82, .72), rgba(48, 23, 49, .82)); }
+    .pin-dots { letter-spacing: .48rem; }
+    .key-button { min-height: 60px; border: 1px solid rgba(255, 190, 220, .2); background: rgba(255,255,255,.08); color: #ffe6f1; transition: background .15s, transform .15s; }
+    .key-button:hover { background: rgba(255,255,255,.17); transform: translateY(-1px); }
+    .love-flowers { position: fixed; inset: 0; z-index: 60; overflow: hidden; pointer-events: none; }
+    .love-flower { position: absolute; display: grid; width: 1em; height: 1em; margin: -.5em 0 0 -.5em; place-items: center; font-size: clamp(1.5rem, 5vw, 3rem); opacity: 0; filter: drop-shadow(0 0 10px rgba(255, 150, 200, .8)); animation: flower-bloom .9s ease-out forwards; }
+    @keyframes flower-bloom { 0% { opacity: 0; transform: scale(0) rotate(-45deg); } 70% { opacity: 1; transform: scale(1.2) rotate(12deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+    .pin-card.pin-wrong { animation: pin-wiggle .55s ease-in-out; }
+    .birthday-deck { width: min(90vw, 560px); }
+    .birthday-slide { background: linear-gradient(145deg, rgba(255, 245, 250, .98), rgba(255, 210, 232, .97)); }
+    .birthday-slide:not(.hidden) { animation: slide-pop .55s cubic-bezier(.2, .8, .3, 1) both; }
+    .birthday-slide > div:first-child { animation: emoji-bob 2.2s ease-in-out infinite; transform-origin: center bottom; }
+    .birthday-slide h1, .birthday-slide h2 { animation: title-sparkle 2.8s ease-in-out infinite; }
+    #nextSlide:not(:disabled) { animation: button-heartbeat 1.8s ease-in-out infinite; }
+    .candle-cake { position: relative; width: 180px; height: 132px; margin: 0 auto 12px; }
+    .candle-cake .cake-emoji { position: absolute; inset: 35px 0 0; font-size: 5rem; line-height: 1; }
+    .candles { position: absolute; z-index: 1; top: 20px; left: 50%; display: flex; gap: 12px; transform: translateX(-50%); }
+    .candle { position: relative; width: 10px; height: 40px; border-radius: 4px 4px 2px 2px; background: repeating-linear-gradient(135deg, #ff8db7 0 5px, #fff0f5 5px 9px); box-shadow: 0 1px 3px #8b536b; }
+    .flame { position: absolute; top: -18px; left: 1px; width: 8px; height: 15px; border-radius: 50% 50% 45% 45%; background: radial-gradient(ellipse at 50% 70%, #fff8ad 0 20%, #ffad42 55%, #ff6b46 100%); transform-origin: center bottom; animation: flame-flicker .55s ease-in-out infinite alternate; filter: drop-shadow(0 0 5px #ffb347); }
+    .candle-cake.blown .flame { animation: flame-out .55s ease-out forwards; }
+    .candle-cake.blown .candles::after { content: '〰'; position: absolute; top: -28px; left: 2px; color: #aaa; font-size: 1.4rem; opacity: 0; animation: smoke-rise 1.2s ease-out .25s forwards; }
+    @keyframes flame-flicker { from { transform: rotate(-8deg) scale(.9); } to { transform: rotate(8deg) scale(1.08); } }
+    @keyframes flame-out { to { opacity: 0; transform: translateY(-12px) scale(.2); } }
+    @keyframes smoke-rise { 20% { opacity: .7; } to { opacity: 0; transform: translateY(-22px); } }
+    @keyframes slide-pop { from { opacity: 0; transform: translateY(18px) scale(.96) rotate(-1deg); } to { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+    @keyframes emoji-bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+    @keyframes title-sparkle { 0%, 100% { text-shadow: 0 0 0 rgba(236, 72, 153, 0); } 50% { text-shadow: 0 0 12px rgba(236, 72, 153, .3); } }
+    @keyframes button-heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+    #previousSlide:disabled, #nextSlide:disabled { cursor: not-allowed; opacity: .55; }
+    @keyframes pin-wiggle {
+      0%, 100% { transform: translateX(0) rotate(0); }
+      20% { transform: translateX(-10px) rotate(-2deg); }
+      40% { transform: translateX(9px) rotate(2deg); }
+      60% { transform: translateX(-6px) rotate(-1deg); }
+      80% { transform: translateX(4px) rotate(1deg); }
+    }
+    @media (max-height: 760px) { .pin-card { min-height: auto; padding-block: 1.5rem; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+    :root { font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; color-scheme: dark; }
+    html { min-height: 100%; background: #21182c; }
+    body {
+      position: relative; min-height: 100svh; height: auto; overflow-x: hidden; padding: 24px 16px;
+      background-image: radial-gradient(ellipse at 12% 15%, rgba(241, 157, 190, .24), transparent 34%),
+        radial-gradient(ellipse at 88% 82%, rgba(168, 125, 200, .23), transparent 36%),
+        linear-gradient(135deg, #20172a, #492d4c 52%, #201b35) !important;
+    }
+    body::before, body::after { content: ''; position: fixed; z-index: 0; border-radius: 50%; pointer-events: none; }
+    body::before { width: 280px; height: 280px; top: -150px; right: 9%; background: rgba(255, 224, 234, .13); filter: blur(2px); }
+    body::after { width: 360px; height: 360px; bottom: -210px; left: -120px; background: rgba(206, 171, 229, .13); filter: blur(3px); }
+    #pinGate { padding: 20px; background: rgba(20, 13, 27, .65) !important; backdrop-filter: blur(14px); }
+    .pin-card {
+      width: min(100%, 460px); min-height: 0; height: auto; max-height: calc(100svh - 40px); overflow-y: auto;
+      padding: clamp(24px, 5vh, 42px) clamp(22px, 6vw, 46px) !important; gap: 0;
+      border: 1px solid rgba(255, 235, 244, .24); border-radius: 30px;
+      background: linear-gradient(150deg, rgba(83, 52, 81, .97), rgba(37, 28, 49, .98)) !important;
+      box-shadow: 0 30px 90px rgba(8, 4, 16, .48), inset 0 1px rgba(255,255,255,.16);
+    }
+    .pin-card > div:first-child { display: grid; place-items: center; width: 78px; height: 78px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,.2); border-radius: 25px; background: rgba(255,255,255,.09); font-size: 3rem; }
+    .pin-card > p:first-of-type { margin-bottom: 10px; font-size: .68rem; letter-spacing: .24em; }
+    .pin-card label { font-size: clamp(1.65rem, 5vw, 2.1rem); }
+    .pin-card > div:nth-of-type(2) { margin-bottom: 12px; }
+    .pin-card > p:nth-of-type(2) { margin-bottom: 18px; font-size: .98rem; line-height: 1.7; }
+    #pinInput { border-color: rgba(255, 212, 230, .32); background: rgba(24, 14, 31, .74); letter-spacing: .5rem; }
+    #pinProgress { margin-bottom: 16px; }
+    #pinProgress span { width: 10px; height: 10px; border-color: rgba(255, 207, 226, .68); }
+    .pin-card [data-digit], .pin-card [data-action] { min-height: 50px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,.12); }
+    .pin-card [data-digit]:active, .pin-card [data-action]:active { transform: scale(.96); }
+    .pin-card > button[type="submit"] { padding-block: 14px; color: #49243d; }
+    #pinError { min-height: 20px; }
+    .pin-card > p:last-child { margin-top: 12px; padding-top: 8px; font-size: .78rem; }
+    #birthdayDeck { position: relative; z-index: 1; width: min(100%, 590px); margin: auto; }
+    .birthday-slide {
+      position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.75) !important; border-radius: 30px !important;
+      padding: clamp(28px, 6vw, 48px) !important; color: #533149 !important;
+      background: linear-gradient(145deg, rgba(255, 251, 250, .99), rgba(255, 231, 239, .98)) !important;
+      box-shadow: 0 28px 70px rgba(13, 5, 21, .34), inset 0 1px rgba(255,255,255,.9) !important;
+    }
+    .birthday-slide::before { content: '✦'; position: absolute; top: 14px; right: 21px; color: #d891aa; font-size: 1.4rem; opacity: .75; }
+    .birthday-slide > div:first-child { filter: drop-shadow(0 8px 12px rgba(126, 67, 91, .16)); }
+    .birthday-slide h1, .birthday-slide h2 { color: #713c61; }
+    .birthday-slide p { line-height: 1.7; }
+    .birthday-slide figure { border: 1px solid #f2dce5; }
+    .birthday-slide figure img { background: #f5dce5; }
+    .birthday-slide .bg-white\/70 { border: 1px solid rgba(218, 167, 190, .25); }
+    #birthdayDeck nav { padding: 0 2px; }
+    #birthdayDeck nav button { min-height: 46px; border: 1px solid rgba(255,255,255,.25); transition: transform .18s, filter .18s; }
+    #birthdayDeck nav button:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.08); }
+    #slideCount { color: #fff4f8; letter-spacing: .08em; }
+    .love-flower { text-shadow: 0 8px 24px rgba(31, 9, 30, .25); }
+    @media (max-height: 760px) {
+      .pin-card { min-height: 0; padding-block: 20px !important; }
+      .pin-card > div:first-child { width: 58px; height: 58px; margin-bottom: 8px; font-size: 2.3rem; }
+      .pin-card > p:nth-of-type(2) { margin-bottom: 10px; }
+      .pin-card .mb-5.grid { gap: 7px; margin-bottom: 10px; }
+      .pin-card [data-digit], .pin-card [data-action] { min-height: 42px; }
+    }
+    @media (max-width: 420px) {
+      body { padding: 14px 12px; }
+      #pinGate { padding: 12px; }
+      .pin-card { max-height: calc(100svh - 24px); border-radius: 24px; }
+      .birthday-slide { border-radius: 24px !important; }
+      .birthday-slide figure img { height: 112px; }
+      #birthdayDeck nav button { padding-inline: 12px; font-size: .88rem; }
+    }
+  </style>
+</head>
+<body style="background-image: url(https://images.unsplash.com/photo-1589307004173-3c95204d00ee?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D);
+" class="flex justify-center h-screen items-center"
+
+>
+<div id="pinGate" class="pin-gate fixed inset-0 z-50 flex items-center justify-center overflow-y-auto text-pink-100">
+  <form id="pinForm" class="pin-card flex flex-col items-center px-6 py-6 text-center shadow-2xl sm:px-12">
+    <div class="mb-1 text-7xl" aria-hidden="true">🔐</div>
+    <p class="mb-4 text-sm font-semibold tracking-[.32em] text-pink-300">RAHASIA KECIL UNTUKMU</p>
+    <label for="pinInput" class="mb-2 text-3xl font-bold leading-tight text-pink-200 sm:text-4xl">Masukkan PIN Rahasia</label>
+    <div class="mb-7 text-3xl" aria-hidden="true">💌</div>
+    <p class="mb-8 max-w-sm text-lg font-semibold leading-8 text-pink-100/85">Enam angka kecil untuk membuka kejutan manis ini. Kamu pasti tahu PIN-nya! 💗</p>
+    <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required aria-label="PIN enam angka"
+      class="pin-dots mb-4 w-full max-w-[308px] rounded-2xl border border-pink-200/40 bg-[#1d0b22] px-4 py-5 text-center text-2xl text-pink-100 shadow-inner placeholder:text-pink-100/30 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-300/30" placeholder="• • • • • •">
+    <div id="pinProgress" class="mb-6 flex gap-3" aria-hidden="true"></div>
+    <div class="mb-5 grid w-full max-w-[338px] grid-cols-3 gap-3" aria-label="Tombol angka">
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="1">1</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="2">2</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="3">3</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="4">4</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="5">5</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="6">6</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="7">7</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="8">8</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="9">9</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-action="delete" aria-label="Hapus angka">⌫</button>
+      <button class="key-button rounded-2xl text-xl font-bold" type="button" data-digit="0">0</button>
+      <button class="rounded-2xl bg-gradient-to-r from-pink-200 to-pink-400 text-2xl font-bold text-[#58213f] hover:brightness-105" type="button" data-action="heart" aria-label="Masukkan hati">♡</button>
+    </div>
+    <button class="w-full max-w-[432px] rounded-full bg-gradient-to-r from-pink-200 to-pink-400 px-6 py-4 text-lg font-extrabold text-[#54203d] shadow-lg shadow-pink-500/20 hover:brightness-105" type="submit">Buka kejutan 💖</button>
+    <p id="pinError" class="mt-3 min-h-5 text-sm text-pink-200" aria-live="polite"></p>
+    <p class="mt-auto pt-6 text-sm font-medium text-pink-100/80">Petunjuk: tanyakan pada orang yang mengirim website ini 😊</p>
+  </form>
+</div>
+   
+<main id="birthdayDeck" class="birthday-deck animate__animated animate__pulse" aria-live="polite">
+  <section class="birthday-slide rounded-3xl border-4 border-pink-300 px-7 py-10 text-center text-pink-800 shadow-2xl sm:px-12" data-slide="0">
+    <div id="candleCake" class="candle-cake" aria-label="Kue ulang tahun dengan tiga lilin menyala">
+      <div class="candles" aria-hidden="true"><span class="candle"><i class="flame"></i></span><span class="candle"><i class="flame"></i></span><span class="candle"><i class="flame"></i></span></div>
+      <span class="cake-emoji" aria-hidden="true">🎂</span>
+    </div>
+    <button id="blowCandles" class="mb-4 rounded-full bg-pink-100 px-5 py-2 font-bold text-pink-700 shadow-sm transition hover:bg-pink-200" type="button">Tiup lilinnya! 💨</button>
+    <p class="mb-2 font-semibold tracking-[.25em] text-pink-500">HARI SPESIALMU</p>
+    <h1 class="text-4xl font-extrabold">Happy Birthday!</h1>
+    <h2 class="mt-2 text-2xl font-semibold">My Princess 💖</h2>
+    <p class="mt-5 text-lg">Semoga hari ini penuh tawa, cinta, dan semua hal manis yang kamu suka!</p>
+  </section>
+  <section class="birthday-slide hidden rounded-3xl border-4 border-pink-300 px-7 py-10 text-center text-pink-800 shadow-2xl sm:px-12" data-slide="1" aria-hidden="true">
+    <div class="mb-4 text-6xl" aria-hidden="true">🌸</div>
+    <p class="mb-2 font-semibold tracking-[.25em] text-pink-500">UNTUKMU, SAYANG</p>
+    <h2 class="text-3xl font-extrabold">Semoga impianmu jadi nyata!</h2>
+    <p class="mt-5 text-lg">Terima kasih sudah membuat dunia terasa lebih indah. Kamu pantas mendapatkan semua kebahagiaan dan cinta. 💕</p>
+    <p class="mt-5 text-2xl" aria-label="Bunga dan hati">🌷 🌼 🌷</p>
+  </section>
+  <section class="birthday-slide hidden rounded-3xl border-4 border-pink-300 px-5 py-8 text-center text-pink-800 shadow-2xl sm:px-8" data-slide="2" aria-hidden="true">
+    <p class="mb-2 font-semibold tracking-[.25em] text-pink-500">POTONGAN KENANGAN</p>
+    <h2 class="mb-5 text-3xl font-extrabold">Little moments, big love 📸</h2>
+    <div class="grid grid-cols-2 gap-3 text-left">
+      <figure class="rotate-[-2deg] rounded-2xl bg-white p-2 pb-4 shadow-lg">
+        <img class="h-36 w-full rounded-xl object-cover" src="foto1.jpg" alt="Dua sahabat menikmati waktu bersama" loading="lazy">
+        <figcaption class="px-1 pt-2 text-sm font-semibold">Ketawa sampai lupa waktu 💕</figcaption>
+      </figure>
+      <figure class="mt-5 rotate-[2deg] rounded-2xl bg-white p-2 pb-4 shadow-lg">
+        <img class="h-36 w-full rounded-xl object-cover" src="foto2.jpg" alt="Langit senja berwarna hangat" loading="lazy">
+        <figcaption class="px-1 pt-2 text-sm font-semibold">Senja dan cerita kecil 🌅</figcaption>
+      </figure>
+      <figure class="mt-1 rotate-[2deg] rounded-2xl bg-white p-2 pb-4 shadow-lg">
+        <img class="h-36 w-full rounded-xl object-cover" src="foto3.jpg" alt="Buket bunga berwarna lembut" loading="lazy">
+        <figcaption class="px-1 pt-2 text-sm font-semibold">Bunga kecil buat kamu 🌷</figcaption>
+      </figure>
+      <figure class="rotate-[-2deg] rounded-2xl bg-white p-2 pb-4 shadow-lg">
+        <img class="h-36 w-full rounded-xl object-cover" src="foto4.jpg" alt="Kenangan indah bersama" loading="lazy">
+        <figcaption class="px-1 pt-2 text-sm font-semibold">Best memories! 💌</figcaption>
+      </figure>
+    </div>
+    <p class="mt-5 text-sm italic text-pink-600">Semoga kita bikin lebih banyak kenangan indah lagi ✨</p>
+  </section>
+  <section class="birthday-slide hidden rounded-3xl border-4 border-pink-300 px-7 py-10 text-center text-pink-800 shadow-2xl sm:px-12" data-slide="3" aria-hidden="true">
+    <div class="mb-3 text-6xl" aria-hidden="true">🎀</div>
+    <p class="mb-2 font-semibold tracking-[.25em] text-pink-500">SEDIKIT PENGINGAT</p>
+    <h2 class="text-3xl font-extrabold">Kamu itu...</h2>
+    <div class="mt-6 space-y-3 text-left text-lg font-semibold">
+      <p class="rounded-2xl bg-white/70 p-3 shadow-sm">🌟 Manisnya bikin semut ikut senyum</p>
+      <p class="rounded-2xl bg-white/70 p-3 shadow-sm">🧸 Lucu bahkan saat lagi ngambek</p>
+      <p class="rounded-2xl bg-white/70 p-3 shadow-sm">🌈 Punya cara sendiri bikin hari jadi cerah</p>
+    </div>
+    <p class="mt-6 text-xl font-bold">Pokoknya kamu favoritku! 🥰</p>
+  </section>
+  <section class="birthday-slide hidden rounded-3xl border-4 border-pink-300 px-7 py-10 text-center text-pink-800 shadow-2xl sm:px-12" data-slide="4" aria-hidden="true">
+    <div class="mb-3 text-6xl" aria-hidden="true">🧁</div>
+    <p class="mb-2 font-semibold tracking-[.25em] text-pink-500">SURAT KECIL UNTUKMU</p>
+    <h2 class="text-3xl font-extrabold">A wish just for you 💌</h2>
+    <p class="mt-5 rounded-3xl bg-white/70 p-5 text-lg leading-8 shadow-inner">Semoga tahun barumu dipenuhi tawa, teman baik, mimpi yang tercapai, dan banyak alasan untuk merasa disayang. Tetap jadi kamu yang ceria dan istimewa, ya! 💗</p>
+    <p class="mt-6 text-2xl">🎂 🎁 🎈</p>
+    <p class="mt-2 font-bold text-pink-600">With lots of love, hari ini dan selalu ♡</p>
+  </section>
+  <section class="birthday-slide animation-slide hidden rounded-3xl border-4 border-pink-300 px-7 py-10 text-center text-pink-800 shadow-2xl sm:px-12" data-slide="5" aria-hidden="true">
+    <div class="mb-3 flex justify-center gap-4 text-5xl" aria-hidden="true"><span class="party-icon">🎈</span><span class="party-icon">🎉</span><span class="party-icon">🎁</span></div>
+    <p class="mb-2 font-semibold tracking-[.25em] text-pink-500">WAKTUNYA BERSINAR</p>
+    <h2 class="text-3xl font-extrabold">Hari ini tentang kamu! ✨</h2>
+    <div class="party-ribbon" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <p class="party-message rounded-3xl bg-white/70 p-5 text-lg font-semibold leading-8">Semoga setiap langkahmu ditemani kebahagiaan, kejutan seru, dan orang-orang yang selalu menyayangimu. Teruslah jadi cahaya yang membuat hari-hari terasa istimewa! 💖</p>
+    <p class="mt-5 text-3xl" aria-label="Konfeti">🌟 💝 🌟</p>
+  </section>
+  <nav class="mt-5 flex items-center justify-between gap-3" aria-label="Navigasi slide ulang tahun">
+    <button id="previousSlide" class="rounded-full bg-pink-200 px-4 py-3 font-bold text-pink-800 shadow hover:bg-pink-300" type="button" disabled>← Kembali</button>
+    <p id="slideCount" class="font-semibold text-white drop-shadow" aria-label="Slide 1 dari 6">1 / 6</p>
+    <button id="nextSlide" class="rounded-full bg-pink-500 px-4 py-3 font-bold text-white shadow hover:bg-pink-600" type="button">Lanjut →</button>
+  </nav>
+</main>
+</div>
+<audio id="birthdayMusic" src="musik.mp3"></audio>
+<script>
+  const pinInput = document.getElementById('pinInput');
+  const pinProgress = document.getElementById('pinProgress');
+  const updatePinProgress = () => {
+    pinProgress.innerHTML = Array.from({ length: 6 }, (_, index) =>
+      `<span class="h-3.5 w-3.5 rounded-full border border-pink-300/80 ${index < pinInput.value.length ? 'bg-pink-300' : 'bg-transparent'}"></span>`
+    ).join('');
+  };
+  document.querySelectorAll('[data-digit]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (pinInput.value.length < 6) pinInput.value += button.dataset.digit;
+      updatePinProgress();
+      pinInput.focus();
+    });
+  });
+  document.querySelector('[data-action="delete"]').addEventListener('click', () => {
+    pinInput.value = pinInput.value.slice(0, -1);
+    updatePinProgress();
+    pinInput.focus();
+  });
+  document.querySelector('[data-action="heart"]').addEventListener('click', () => {
+    if (pinInput.value.length === 6) document.getElementById('pinForm').requestSubmit();
+  });
+  pinInput.addEventListener('input', () => {
+    pinInput.value = pinInput.value.replace(/\D/g, '').slice(0, 6);
+    updatePinProgress();
+  });
+  updatePinProgress();
+  const slideNav = document.querySelector('#birthdayDeck nav');
+  const birthdaySlides = [0, 2, 1, 3, 4, 5].map((slideNumber) =>
+    document.querySelector(`[data-slide="${slideNumber}"]`)
+  );
+  birthdaySlides.forEach((slide) => slideNav.before(slide));
+  let activeSlide = 0;
+  const showBirthdaySlide = (index) => {
+    activeSlide = index;
+    birthdaySlides.forEach((slide, slideIndex) => {
+      const isActive = slideIndex === activeSlide;
+      slide.classList.toggle('hidden', !isActive);
+      slide.setAttribute('aria-hidden', String(!isActive));
+    });
+    document.getElementById('previousSlide').disabled = activeSlide === 0;
+    document.getElementById('nextSlide').disabled = activeSlide === birthdaySlides.length - 1;
+    const counter = document.getElementById('slideCount');
+    counter.textContent = `${activeSlide + 1} / ${birthdaySlides.length}`;
+    counter.setAttribute('aria-label', `Slide ${activeSlide + 1} dari ${birthdaySlides.length}`);
+  };
+  document.getElementById('previousSlide').addEventListener('click', () => showBirthdaySlide(Math.max(0, activeSlide - 1)));
+  document.getElementById('nextSlide').addEventListener('click', () => showBirthdaySlide(Math.min(birthdaySlides.length - 1, activeSlide + 1)));
+  document.getElementById('blowCandles').addEventListener('click', (event) => {
+    const cake = document.getElementById('candleCake');
+    cake.classList.add('blown');
+    cake.setAttribute('aria-label', 'Kue ulang tahun dengan lilin yang sudah ditiup');
+    event.currentTarget.textContent = 'Yeay, buat permohonan! 🎉';
+    event.currentTarget.disabled = true;
+  });
+  document.getElementById('pinForm').addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (pinInput.value === '123456') {
+      document.getElementById('birthdayMusic').play();
+      const flowerOverlay = document.createElement('div');
+      flowerOverlay.className = 'love-flowers';
+      flowerOverlay.setAttribute('aria-hidden', 'true');
+      for (let index = 0; index < 72; index++) {
+        const angle = (Math.PI * 2 * index) / 72;
+        const x = 16 * Math.pow(Math.sin(angle), 3);
+        const y = 13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle);
+        const flower = document.createElement('span');
+        flower.className = 'love-flower';
+        flower.textContent = ['🌸', '🌷', '🌼'][index % 3];
+        flower.style.left = `${50 + x * 1.42}%`;
+        flower.style.top = `${47 - y * 1.42}%`;
+        flower.style.animationDelay = `${index * 16}ms`;
+        flowerOverlay.appendChild(flower);
+      }
+      document.body.appendChild(flowerOverlay);
+      setTimeout(() => {
+        document.getElementById('pinGate').remove();
+        flowerOverlay.remove();
+      }, 2200);
+    } else {
+      document.getElementById('pinError').textContent = 'PIN salah, coba lagi 💗';
+      const pinCard = document.getElementById('pinForm');
+      pinCard.classList.remove('pin-wrong');
+      void pinCard.offsetWidth;
+      pinCard.classList.add('pin-wrong');
+      pinInput.value = '';
+      updatePinProgress();
+    }
+  });
+</script>
+</body>
+</html>
